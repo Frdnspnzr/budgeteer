@@ -9,5 +9,4 @@ install:
   - cd src
   - pipenv install --dev
 script:
-  - cd src
   - python manage.py test

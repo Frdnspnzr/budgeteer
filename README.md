@@ -1,5 +1,7 @@
 # Budgeteer - The opinionated personal finance helper
 
+[![Build Status](https://travis-ci.org/Friedenspanzer/budgeteer.svg?branch=master)](https://travis-ci.org/Friedenspanzer/budgeteer)
+
 ## Installing
 
 ### The Easy Way

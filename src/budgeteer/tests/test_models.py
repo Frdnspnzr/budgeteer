@@ -294,8 +294,8 @@ class AccountTest(TestCase):
         account.save()
 
         tomorrow = datetime.date.today() + datetime.timedelta(days=1)
-        transactions = [(_create_transaction(tomorrow.month, tomorrow.year, account)
-                         for _ in range(1))]
+        transactions = ([_create_transaction(tomorrow.month, tomorrow.year, account)
+                         for _ in range(1)])
 
         expected_total = ((starting_balance + sum(Decimal(t.value) for t in transactions))
                           .quantize(Decimal('.01')))
@@ -316,8 +316,8 @@ class AccountTest(TestCase):
         account.save()
 
         tomorrow = datetime.date.today() + datetime.timedelta(days=1)
-        transactions = [(_create_transaction(tomorrow.month, tomorrow.year, account)
-                         for _ in range(1))]
+        transactions = ([_create_transaction(tomorrow.month, tomorrow.year, account)
+                         for _ in range(1)])
         unexpected_transactions = [(_create_transaction(tomorrow.month,
                                                         tomorrow.year,
                                                         account,
