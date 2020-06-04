@@ -663,7 +663,7 @@ def _create_transaction(month, year, account=None, locked=False) -> models.Trans
     transaction = models.Transaction()
     transaction.category = category
     transaction.account = account
-    transaction.value = 123.45
+    transaction.value = Decimal(random.uniform(-999.99, 999.99))
     transaction.partner = "Test partner"
     transaction.locked = locked
     transaction.date = _random_day_in_month(month, year)
