@@ -130,6 +130,20 @@ class SheetTests(TestCase):
 
         self.assertCountEqual(expected_transactions, actual_transactions)
 
+    def test_available(self):
+        sheet = models.Sheet(month=2, year=2020)
+        sheet.save()
+
+        transactions = [_create_transaction(2, 2020) for _ in range(10)]
+        inflow = sum(trans.value for trans in filter(lambda t: t.value > 0, transactions))
+
+        entries = [_create_sheet_entry(sheet)]
+        budget = sum(e.value for e in entries)
+
+        expected_available = (inflow - budget).quantize(Decimal('.01'))
+
+        self.assertEqual(expected_available, sheet.available)
+
 class SheetEntryTest(TestCase):
 
     def setUp(self):
@@ -670,6 +684,18 @@ def _create_transaction(month, year, account=None, locked=False) -> models.Trans
 
     transaction.save()
     return transaction
+
+def _create_sheet_entry(sheet) -> models.SheetEntry:
+    category = models.Category(name="Test category")
+    category.save()
+
+    entry = models.SheetEntry()
+    entry.sheet = sheet
+    entry.value = Decimal(random.uniform(-999.99, 999.99))
+    entry.category = category
+    entry.save()
+
+    return entry
 
 def _random_day_in_month(month, year):
     dates = calendar.Calendar().itermonthdates(year, month)

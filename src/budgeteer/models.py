@@ -36,6 +36,21 @@ class Sheet(models.Model):
                                  calendar.monthrange(self.year, self.month)[1])
         return Transaction.objects.filter(date__gte=date_start).filter(date__lte=date_end)
 
+    @property
+    def available(self):
+        """
+        Calculates the value left to budget on this sheet.
+
+        Calculated as all positive transactions (inflow) minus already budgeted amounts.
+        """
+        return self.__get_sum_of_inflows() - self.__get_sum_of_budgets()
+
+    def __get_sum_of_inflows(self):
+        return sum(trans.value for trans in filter(lambda t: t.value > 0, self.transactions))
+
+    def __get_sum_of_budgets(self):
+        return self.sheetentry_set.all().aggregate(models.Sum('value'))['value__sum']
+
     class Meta:
         unique_together = ['month', 'year']
 
