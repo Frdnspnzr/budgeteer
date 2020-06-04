@@ -135,14 +135,60 @@ class SheetTests(TestCase):
         sheet.save()
 
         transactions = [_create_transaction(2, 2020) for _ in range(10)]
-        inflow = sum(trans.value.quantize(Decimal('.01')) for trans in filter(lambda t: t.value > 0, transactions))
+        inflow = sum(trans.value.quantize(Decimal('.01')) for trans in transactions)
 
         entries = [_create_sheet_entry(sheet)]
         budget = sum(e.value.quantize(Decimal('.01')) for e in entries)
 
         expected_available = inflow - budget
 
-        self.assertEqual(expected_available, sheet.available)
+        self.assertAlmostEqual(expected_available, sheet.available, 2)
+
+    def test_available_with_carryover(self):
+        sheet = models.Sheet(month=12, year=2020)
+        sheet.save()
+
+        transactions = [_create_transaction(12, 2020) for _ in range(10)]
+        inflow = sum(trans.value.quantize(Decimal('.01')) for trans in transactions)
+
+        entries = [_create_sheet_entry(sheet)]
+        budget = sum(e.value.quantize(Decimal('.01')) for e in entries)
+
+        previous_sheets = [_create_sheet(month=month, year=2020) for month in range(1, 12)]
+
+        expected_available = inflow - budget + previous_sheets[-1].available
+
+        self.assertAlmostEqual(expected_available, sheet.available, 2)
+
+    def test_get_previous_exists_same_year(self):
+        sheet = models.Sheet(month=2, year=2020)
+        sheet.save()
+
+        previous_sheet = models.Sheet(month=1, year=2020)
+        previous_sheet.save()
+
+        sheet_in_db = models.Sheet.objects.get(pk=sheet.pk)
+
+        self.assertEqual(previous_sheet, sheet_in_db.previous)
+
+    def test_get_previous_exists_other_year(self):
+        sheet = models.Sheet(month=1, year=2020)
+        sheet.save()
+
+        previous_sheet = models.Sheet(month=12, year=2019)
+        previous_sheet.save()
+
+        sheet_in_db = models.Sheet.objects.get(pk=sheet.pk)
+
+        self.assertEqual(previous_sheet, sheet_in_db.previous)
+
+    def test_get_previous_not_exists(self):
+        sheet = models.Sheet(month=1, year=2020)
+        sheet.save()
+
+        sheet_in_db = models.Sheet.objects.get(pk=sheet.pk)
+
+        self.assertIsNone(sheet_in_db.previous)
 
 class SheetEntryTest(TestCase):
 
@@ -152,10 +198,6 @@ class SheetEntryTest(TestCase):
 
         self.category = models.Category(name="Test category")
         self.category.save()
-
-    def tearDown(self):
-        self.sheet.delete()
-        self.category.delete()
 
     def test_entry_save(self):
         entry = models.SheetEntry(sheet=self.sheet, category=self.category, value=0)
@@ -352,11 +394,6 @@ class TransactionTest(TestCase):
         self.category.save()
         self.account = models.Account(name="Test", balance=Decimal(0))
         self.account.save()
-
-    def tearDown(self):
-        models.Transaction.objects.all().delete()
-        self.account.delete()
-        self.category.delete()
 
     def test_partner_save(self):
         expected_name = ''.join(random.choices(string.ascii_letters + string.digits, k=200))
@@ -700,3 +737,13 @@ def _create_sheet_entry(sheet) -> models.SheetEntry:
 def _random_day_in_month(month, year):
     dates = calendar.Calendar().itermonthdates(year, month)
     return random.choice([date for date in dates if date.month == month])
+
+def _create_sheet(month, year) -> models.Sheet:
+    sheet = models.Sheet(month=month, year=year)
+    sheet.save()
+
+    for _ in range(10):
+        _create_transaction(month, year)
+        _create_sheet_entry(sheet)
+
+    return sheet

@@ -10,7 +10,6 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-
 class Category(models.Model):
     """
     A category that money goes into when budgeting.
@@ -39,20 +38,40 @@ class Sheet(models.Model):
     @property
     def available(self):
         """
-        Calculates the value left to budget on this sheet.
+        Calculates the value left to budget on this sheet (may be negative if overbudgeted).
 
-        Calculated as all positive transactions (inflow) minus already budgeted amounts.
+        Calculated as all transactions minus already budgeted amounts plus what is left from the
+        previous sheet.
         """
+        if self.previous is not None:
+            return (self.__get_sum_of_inflows()
+                    - self.__get_sum_of_budgets()
+                    + self.previous.available)
+
         return self.__get_sum_of_inflows() - self.__get_sum_of_budgets()
 
-    def __get_sum_of_inflows(self):
-        return sum(trans.value for trans in filter(lambda t: t.value > 0, self.transactions))
+    @property
+    def previous(self):
+        """
+        Gets the previous sheet or None of none exists.
 
-    def __get_sum_of_budgets(self):
-        return self.sheetentry_set.all().aggregate(models.Sum('value'))['value__sum']
+        This expects sheets to be continuous without gaps.
+        """
+        month = self.month - 1 if self.month > 1 else 12
+        year = self.year if self.month > 1 else self.year - 1
+        try:
+            return Sheet.objects.get(month=month, year=year)
+        except Sheet.DoesNotExist:
+            return None
 
     class Meta:
         unique_together = ['month', 'year']
+
+    def __get_sum_of_inflows(self):
+        return self.transactions.all().aggregate(models.Sum('value'))['value__sum']
+
+    def __get_sum_of_budgets(self):
+        return self.sheetentry_set.all().aggregate(models.Sum('value'))['value__sum']
 
 class SheetEntry(models.Model):
     """

@@ -22,10 +22,14 @@ Currently the main focus is a better user interface for the core features:
 
   * Edit and add transactions on the overview screen
   * Easier mass locking of transactions
+  * Re-categorization of existing transactions to allow category deletion
+  * Automatically lock old sheets to keep system performance up
 
 After that, some planned features are:
 
-  * Automatic import from various banking systems.
-  * Statistics.
-  * Budget targets like monthly amounts, total amounts, etc.
-  * Project budgeting as "transient" budgets sitting above "real" categories.
+  * Recurring transactions
+  * Statistics
+  * Automatic import from various banking systems
+  * Budget targets like monthly amounts, total amounts, etc
+  * Purchase budgeting as transient budgets sitting below categories
+  * Project budgeting as overarching budgets spanning multiple categories
