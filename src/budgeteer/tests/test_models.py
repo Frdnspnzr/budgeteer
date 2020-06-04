@@ -135,12 +135,12 @@ class SheetTests(TestCase):
         sheet.save()
 
         transactions = [_create_transaction(2, 2020) for _ in range(10)]
-        inflow = sum(trans.value for trans in filter(lambda t: t.value > 0, transactions))
+        inflow = sum(trans.value.quantize(Decimal('.01')) for trans in filter(lambda t: t.value > 0, transactions))
 
         entries = [_create_sheet_entry(sheet)]
-        budget = sum(e.value for e in entries)
+        budget = sum(e.value.quantize(Decimal('.01')) for e in entries)
 
-        expected_available = (inflow - budget).quantize(Decimal('.01'))
+        expected_available = inflow - budget
 
         self.assertEqual(expected_available, sheet.available)
 
