@@ -190,6 +190,29 @@ class SheetTests(TestCase):
 
         self.assertIsNone(sheet_in_db.previous)
 
+    def test_initialize_entries_on_creation(self):
+        expected_categories = [_create_category() for _ in range(10)]
+
+        sheet = models.Sheet(month=2, year=2020)
+        sheet.save()
+
+        sheet_in_db = models.Sheet.objects.get(pk=sheet.pk)
+        self.assertListEqual(expected_categories, list(map(lambda e: e.category, sheet_in_db.sheetentry_set.all())))
+        for entry in sheet_in_db.sheetentry_set.all():
+            self.assertEqual(Decimal(0), entry.value)
+
+    def test_initializes_entries_only_on_create(self):
+        expected_categories = [_create_category() for _ in range(10)]
+        sheet = models.Sheet(month=2, year=2020)
+        sheet.save()
+
+        for _ in range(10):
+            _create_category()
+        sheet.save()
+
+        sheet_in_db = models.Sheet.objects.get(pk=sheet.pk)
+        self.assertListEqual(expected_categories, list(map(lambda e: e.category, sheet_in_db.sheetentry_set.all())))
+
 class SheetEntryTest(TestCase):
 
     def setUp(self):
@@ -747,3 +770,8 @@ def _create_sheet(month, year) -> models.Sheet:
         _create_sheet_entry(sheet)
 
     return sheet
+
+def _create_category() -> models.Category:
+    category = models.Category(name="Test category")
+    category.save()
+    return category

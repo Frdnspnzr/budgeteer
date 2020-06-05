@@ -5,10 +5,13 @@ This includes everything that's absolutely needed for Budgeteer to function.
 """
 import calendar
 import datetime
+from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 
 class Category(models.Model):
     """
@@ -72,6 +75,15 @@ class Sheet(models.Model):
 
     def __get_sum_of_budgets(self):
         return self.sheetentry_set.all().aggregate(models.Sum('value'))['value__sum']
+
+@receiver(post_save, sender=Sheet)
+def initialize_sheet_with_entries(instance, created, raw, **kwargs):
+    """
+    Creates a sheet entry for every category the moment the sheet is created.
+    """
+    if created and not raw:
+        for category in Category.objects.all():
+            SheetEntry(sheet=instance, category=category, value=Decimal(0)).save()
 
 class SheetEntry(models.Model):
     """
