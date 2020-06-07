@@ -106,6 +106,37 @@ class SheetTests(TestCase):
         with self.assertRaises(ValidationError):
             sheet_2.full_clean()
 
+    def test_carryover_save(self):
+        expected_value = (Decimal(random.uniform(-999999999.99, 999999999.99))
+                          .quantize(Decimal('.01')))
+
+        sheet = models.Sheet(month=6, year=2929)
+        sheet.carryover = expected_value
+        sheet.full_clean()
+        sheet.save()
+
+        sheet_in_db = models.Sheet.objects.get(pk=sheet.pk)
+
+        self.assertEqual(expected_value, sheet_in_db.carryover)
+
+    def test_carryover_max_digits(self):
+        expected_value = Decimal('12345678901.23')
+
+        sheet = models.Sheet(month=6, year=2020)
+        sheet.carryover = expected_value
+
+        with self.assertRaises(ValidationError):
+            sheet.full_clean()
+
+    def test_carryover_decimal_places(self):
+        expected_value = Decimal('123456789.123')
+
+        sheet = models.Sheet(month=6, year=2020)
+        sheet.carryover = expected_value
+
+        with self.assertRaises(ValidationError):
+            sheet.full_clean()
+
     def test_get_transactions(self):
         sheet = models.Sheet(month=2, year=2020)
         sheet.save()
@@ -157,6 +188,26 @@ class SheetTests(TestCase):
         previous_sheets = [_create_sheet(month=month, year=2020) for month in range(1, 12)]
 
         expected_available = inflow - budget + previous_sheets[-1].available
+
+        self.assertAlmostEqual(expected_available, sheet.available, 2)
+
+    def test_available_with_locked_carryover(self):
+        sheet = models.Sheet(month=12, year=2020)
+        sheet.save()
+
+        transactions = [_create_transaction(12, 2020) for _ in range(10)]
+        inflow = sum(trans.value.quantize(Decimal('.01')) for trans in filter(lambda t: t.value > 0, transactions))
+
+        entries = [_create_sheet_entry(sheet)]
+        budget = sum(e.value.quantize(Decimal('.01')) for e in entries)
+
+        previous_sheet = models.Sheet(month=11, year=2020)
+        previous_sheet.carryover = Decimal(random.uniform(-999.99, 999.99))
+        previous_sheet.save()
+
+        ignored_sheets = [_create_sheet(month=month, year=2020) for month in range(1, 11)]
+
+        expected_available = inflow - budget + previous_sheet.carryover
 
         self.assertAlmostEqual(expected_available, sheet.available, 2)
 

@@ -27,6 +27,7 @@ class Sheet(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(12)]
     )
     year = models.PositiveSmallIntegerField()
+    carryover = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
 
     @property
     def transactions(self):
@@ -46,6 +47,9 @@ class Sheet(models.Model):
         Calculated as all transactions minus already budgeted amounts plus what is left from the
         previous sheet.
         """
+        if self.carryover is not None:
+            return self.carryover
+
         if self.previous is not None:
             return (self.__get_sum_of_inflows()
                     - self.__get_sum_of_budgets()
