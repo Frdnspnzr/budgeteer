@@ -71,7 +71,7 @@ class Sheet(models.Model):
         unique_together = ['month', 'year']
 
     def __get_sum_of_inflows(self):
-        return self.transactions.all().aggregate(models.Sum('value'))['value__sum']
+        return sum(trans.value for trans in filter(lambda t: t.value > 0, self.transactions))
 
     def __get_sum_of_budgets(self):
         return self.sheetentry_set.all().aggregate(models.Sum('value'))['value__sum']
