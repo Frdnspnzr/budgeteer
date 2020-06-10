@@ -96,6 +96,20 @@ class SheetEntry(models.Model):
     sheet = models.ForeignKey(Sheet, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=12, decimal_places=2)
+    locked = models.BooleanField(default=False)
+
+    LOCKABLE_FIELDS = ['sheet', 'category', 'value']
+
+    def clean(self):
+        super(SheetEntry, self).clean()
+
+        if self.pk is not None and self.locked:
+            previous_state = SheetEntry.objects.get(pk=self.pk)
+            for field in SheetEntry.LOCKABLE_FIELDS:
+                previous_value = getattr(previous_state, field)
+                current_value = getattr(self, field)
+                if previous_value != current_value:
+                    raise ValidationError(f"Field {field} was changed on locked sheet entry.")
 
 class Account(models.Model):
     """

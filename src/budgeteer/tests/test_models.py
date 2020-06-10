@@ -356,6 +356,72 @@ class SheetEntryTest(TestCase):
         with self.assertRaises(ValidationError):
             entry.full_clean()
 
+    def test_locked(self):
+        expected_lock = bool(random.getrandbits(1))
+
+        entry = models.SheetEntry(sheet=self.sheet, category=self.category, value=Decimal(0))
+        entry.locked = expected_lock
+        entry.full_clean()
+        entry.save()
+
+        entry_in_db = models.SheetEntry.objects.get(pk=entry.pk)
+
+        self.assertEqual(expected_lock, entry_in_db.locked)
+
+    def test_locked_default_false(self):
+        entry = models.SheetEntry(sheet=self.sheet, category=self.category, value=Decimal(0))
+        entry.full_clean()
+        entry.save()
+
+        entry_in_db = models.SheetEntry.objects.get(pk=entry.pk)
+
+        self.assertFalse(entry_in_db.locked)
+
+    def test_locked_no_change_to_sheet(self):
+        entry = models.SheetEntry(sheet=self.sheet, category=self.category, value=Decimal(0))
+        entry.locked = True
+        entry.full_clean()
+        entry.save()
+
+        entry_in_db = models.SheetEntry.objects.get(pk=entry.pk)
+
+        new_sheet = models.Sheet(month=1, year=self.sheet.year + 1)
+        new_sheet.save()
+
+        entry_in_db.sheet = new_sheet
+
+        with self.assertRaises(ValidationError):
+            entry_in_db.full_clean()
+
+    def test_locked_no_change_to_category(self):
+        entry = models.SheetEntry(sheet=self.sheet, category=self.category, value=Decimal(0))
+        entry.locked = True
+        entry.full_clean()
+        entry.save()
+
+        entry_in_db = models.SheetEntry.objects.get(pk=entry.pk)
+
+        new_category = models.Category(name=_get_random_name())
+        new_category.save()
+
+        entry_in_db.category = new_category
+
+        with self.assertRaises(ValidationError):
+            entry_in_db.full_clean()
+
+    def test_locked_no_change_to_value(self):
+        entry = models.SheetEntry(sheet=self.sheet, category=self.category, value=Decimal(0))
+        entry.locked = True
+        entry.full_clean()
+        entry.save()
+
+        entry_in_db = models.SheetEntry.objects.get(pk=entry.pk)
+
+        entry_in_db.value = Decimal(1)
+
+        with self.assertRaises(ValidationError):
+            entry_in_db.full_clean()
+
 class AccountTest(TestCase):
 
     def test_name_save(self):
@@ -459,7 +525,7 @@ class AccountTest(TestCase):
 
         account_in_db = models.Account.objects.get(pk=account.pk)
 
-        self.assertEqual(expected_total, account_in_db.total)
+        self.assertAlmostEqual(expected_total, account_in_db.total, 2)
 
 class TransactionTest(TestCase):
 
