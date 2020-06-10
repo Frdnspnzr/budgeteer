@@ -166,7 +166,8 @@ class SheetTests(TestCase):
         sheet.save()
 
         transactions = [_create_transaction(2, 2020) for _ in range(10)]
-        inflow = sum(trans.value.quantize(Decimal('.01')) for trans in filter(lambda t: t.value > 0, transactions))
+        inflow = sum(trans.value.quantize(Decimal('.01'))
+                     for trans in filter(lambda t: t.value > 0, transactions))
 
         entries = [_create_sheet_entry(sheet)]
         budget = sum(e.value.quantize(Decimal('.01')) for e in entries)
@@ -180,7 +181,8 @@ class SheetTests(TestCase):
         sheet.save()
 
         transactions = [_create_transaction(12, 2020) for _ in range(10)]
-        inflow = sum(trans.value.quantize(Decimal('.01')) for trans in filter(lambda t: t.value > 0, transactions))
+        inflow = sum(trans.value.quantize(Decimal('.01'))
+                     for trans in filter(lambda t: t.value > 0, transactions))
 
         entries = [_create_sheet_entry(sheet)]
         budget = sum(e.value.quantize(Decimal('.01')) for e in entries)
@@ -196,7 +198,8 @@ class SheetTests(TestCase):
         sheet.save()
 
         transactions = [_create_transaction(12, 2020) for _ in range(10)]
-        inflow = sum(trans.value.quantize(Decimal('.01')) for trans in filter(lambda t: t.value > 0, transactions))
+        inflow = sum(trans.value.quantize(Decimal('.01'))
+                     for trans in filter(lambda t: t.value > 0, transactions))
 
         entries = [_create_sheet_entry(sheet)]
         budget = sum(e.value.quantize(Decimal('.01')) for e in entries)
@@ -205,7 +208,8 @@ class SheetTests(TestCase):
         previous_sheet.carryover = Decimal(random.uniform(-999.99, 999.99))
         previous_sheet.save()
 
-        ignored_sheets = [_create_sheet(month=month, year=2020) for month in range(1, 11)]
+        for month in range(1, 11):
+            _create_sheet(month=month, year=2020)
 
         expected_available = inflow - budget + previous_sheet.carryover
 
@@ -248,7 +252,8 @@ class SheetTests(TestCase):
         sheet.save()
 
         sheet_in_db = models.Sheet.objects.get(pk=sheet.pk)
-        self.assertListEqual(expected_categories, list(map(lambda e: e.category, sheet_in_db.sheetentry_set.all())))
+        self.assertListEqual(expected_categories,
+                             list(map(lambda e: e.category, sheet_in_db.sheetentry_set.all())))
         for entry in sheet_in_db.sheetentry_set.all():
             self.assertEqual(Decimal(0), entry.value)
 
@@ -262,7 +267,8 @@ class SheetTests(TestCase):
         sheet.save()
 
         sheet_in_db = models.Sheet.objects.get(pk=sheet.pk)
-        self.assertListEqual(expected_categories, list(map(lambda e: e.category, sheet_in_db.sheetentry_set.all())))
+        self.assertListEqual(expected_categories,
+                             list(map(lambda e: e.category, sheet_in_db.sheetentry_set.all())))
 
 class SheetEntryTest(TestCase):
 
@@ -270,7 +276,7 @@ class SheetEntryTest(TestCase):
         self.sheet = models.Sheet(month=1, year=1)
         self.sheet.save()
 
-        self.category = models.Category(name="Test category")
+        self.category = models.Category(name=_get_random_name())
         self.category.save()
 
     def test_entry_save(self):
@@ -390,7 +396,7 @@ class AccountTest(TestCase):
     def test_balance_max_digits(self):
         balance = Decimal('12345678901.23')
 
-        account = models.Account(name="Test account", balance=balance)
+        account = models.Account(name=_get_random_name(), balance=balance)
 
         with self.assertRaises(ValidationError):
             account.full_clean()
@@ -398,7 +404,7 @@ class AccountTest(TestCase):
     def test_balance_decimal_places(self):
         balance = Decimal('123456789.123')
 
-        account = models.Account(name="Test account", balance=balance)
+        account = models.Account(name=_get_random_name(), balance=balance)
 
         with self.assertRaises(ValidationError):
             account.full_clean()
@@ -434,9 +440,6 @@ class AccountTest(TestCase):
 
         self.assertEqual(expected_total, account_in_db.total)
 
-    def test_total_ignore_locked_transaction(self):
-        pass
-
     def test_total_ignore_other_accounts(self):
         #pylint: disable=unused-variable
         starting_balance = Decimal(random.uniform(-9999.99, 9999.99)).quantize(Decimal('.01'))
@@ -447,12 +450,9 @@ class AccountTest(TestCase):
 
         tomorrow = datetime.date.today() + datetime.timedelta(days=1)
         transactions = ([_create_transaction(tomorrow.month, tomorrow.year, account)
-                         for _ in range(1)])
-        unexpected_transactions = [(_create_transaction(tomorrow.month,
-                                                        tomorrow.year,
-                                                        account,
-                                                        locked=True)
-                                    for _ in range(1))]
+                         for _ in range(10)])
+        for _ in range(10):
+            _create_transaction(tomorrow.month, tomorrow.year, account, locked=True)
 
         expected_total = ((starting_balance + sum(Decimal(t.value) for t in transactions))
                           .quantize(Decimal('.01')))
@@ -747,7 +747,7 @@ class TransactionTest(TestCase):
         transaction.full_clean()
         transaction.save()
 
-        category = models.Category(name="Test category")
+        category = models.Category(name=_get_random_name())
         category.save()
 
         transaction_in_db = models.Transaction.objects.get(pk=transaction.pk)
@@ -768,7 +768,7 @@ class TransactionTest(TestCase):
         transaction.full_clean()
         transaction.save()
 
-        account = models.Account(name="Test account", balance=0)
+        account = models.Account(name=_get_random_name(), balance=0)
         account.save()
 
         transaction_in_db = models.Transaction.objects.get(pk=transaction.pk)
@@ -779,10 +779,10 @@ class TransactionTest(TestCase):
             transaction_in_db.full_clean()
 
 def _create_transaction(month, year, account=None, locked=False) -> models.Transaction:
-    category = models.Category(name="Test category")
+    category = models.Category(name=_get_random_name())
     category.save()
     if account is None:
-        account = models.Account(name="Test account", balance=Decimal(0))
+        account = models.Account(name=_get_random_name(), balance=Decimal(0))
         account.save()
 
     transaction = models.Transaction()
@@ -797,7 +797,7 @@ def _create_transaction(month, year, account=None, locked=False) -> models.Trans
     return transaction
 
 def _create_sheet_entry(sheet) -> models.SheetEntry:
-    category = models.Category(name="Test category")
+    category = models.Category(name=_get_random_name())
     category.save()
 
     entry = models.SheetEntry()
@@ -823,6 +823,9 @@ def _create_sheet(month, year) -> models.Sheet:
     return sheet
 
 def _create_category() -> models.Category:
-    category = models.Category(name="Test category")
+    category = models.Category(name=_get_random_name())
     category.save()
     return category
+
+def _get_random_name() -> string:
+    return "".join(random.choice(string.ascii_letters) for _ in range(10))
