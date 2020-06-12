@@ -10,18 +10,27 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
-from django.db.models.signals import post_save
 
 class Category(models.Model):
     """
     A category that money goes into when budgeting.
+
+    Model instances should not be deleted when they are used in locked sheets. The data model
+    however does not enforce this.
     """
     name = models.CharField(max_length=200)
 
 class Sheet(models.Model):
     """
     A round of budgeting where categories get assigned monetary values.
+
+    Only a single sheet can be created per month. The calculation of the available amount expects
+    sheets to be continous without skipped months. The data model however does not enforce this.
+
+    After a carryover is calculated the sheet is assumed to be locked from further modification.
+    The sheet entries on this sheet should not be changed anymore.
     """
     month = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(12)]
@@ -92,6 +101,12 @@ def initialize_sheet_with_entries(instance, created, raw, **kwargs):
 class SheetEntry(models.Model):
     """
     The budget of a single category for a single sheet.
+
+    This model is not intended to have instances created or deleted by the user. The instance's
+    lifecycle is completely dependent upon other model instances.
+
+    After the sheet entry is locked nothing can be edited anymore. It exists only for
+    statistical purposes.
     """
     sheet = models.ForeignKey(Sheet, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
@@ -110,6 +125,16 @@ class SheetEntry(models.Model):
                 current_value = getattr(self, field)
                 if previous_value != current_value:
                     raise ValidationError(f"Field {field} was changed on locked sheet entry.")
+
+@receiver(post_save, sender=Category)
+def create_sheet_entries_on_category_creation(instance, created, raw, **kwargs):
+    """
+    Creates a sheet entry for every open sheet the moment a new category is created.
+    """
+    if created and not raw:
+        for sheet in Sheet.objects.filter(carryover__isnull=True):
+            new_sheet = SheetEntry(sheet=sheet, category=instance, value=Decimal(0))
+            new_sheet.save()
 
 class Account(models.Model):
     """

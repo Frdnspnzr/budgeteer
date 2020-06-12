@@ -257,19 +257,6 @@ class SheetTests(TestCase):
         for entry in sheet_in_db.sheetentry_set.all():
             self.assertEqual(Decimal(0), entry.value)
 
-    def test_initializes_entries_only_on_create(self):
-        expected_categories = [_create_category() for _ in range(10)]
-        sheet = models.Sheet(month=2, year=2020)
-        sheet.save()
-
-        for _ in range(10):
-            _create_category()
-        sheet.save()
-
-        sheet_in_db = models.Sheet.objects.get(pk=sheet.pk)
-        self.assertListEqual(expected_categories,
-                             list(map(lambda e: e.category, sheet_in_db.sheetentry_set.all())))
-
 class SheetEntryTest(TestCase):
 
     def setUp(self):
@@ -421,6 +408,24 @@ class SheetEntryTest(TestCase):
 
         with self.assertRaises(ValidationError):
             entry_in_db.full_clean()
+
+    def test_created_for_open_sheets_when_category_created(self):
+        open_sheets = [_create_sheet(month, 2020) for month in range(1, 13)]
+        closed_sheets = [_create_sheet(month, 2021) for month in range(1, 13)]
+
+        for sheet in closed_sheets:
+            sheet.carryover = Decimal(random.uniform(-999.99, 999.99))
+            sheet.save()
+
+        new_categories = [_create_category() for _ in range(10)]
+
+        for category in new_categories:
+            for sheet in open_sheets:
+                self.assertEqual(1, models.SheetEntry.objects.filter(category=category,
+                                                                     sheet=sheet).count())
+            for sheet in closed_sheets:
+                self.assertEqual(0, models.SheetEntry.objects.filter(category=category,
+                                                                     sheet=sheet).count())
 
 class AccountTest(TestCase):
 
