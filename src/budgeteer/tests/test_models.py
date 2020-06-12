@@ -859,7 +859,7 @@ def _create_transaction(month, year, account=None, locked=False) -> models.Trans
     transaction = models.Transaction()
     transaction.category = category
     transaction.account = account
-    transaction.value = Decimal(random.uniform(-999.99, 999.99))
+    transaction.value = Decimal(random.uniform(-999.99, 999.99)).quantize(Decimal(".01"))
     transaction.partner = "Test partner"
     transaction.locked = locked
     transaction.date = _random_day_in_month(month, year)
@@ -873,7 +873,7 @@ def _create_sheet_entry(sheet) -> models.SheetEntry:
 
     entry = models.SheetEntry()
     entry.sheet = sheet
-    entry.value = Decimal(random.uniform(-999.99, 999.99))
+    entry.value = Decimal(random.uniform(-999.99, 999.99)).quantize(Decimal(".01"))
     entry.category = category
     entry.save()
 
