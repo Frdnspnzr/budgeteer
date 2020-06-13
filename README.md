@@ -28,6 +28,7 @@ Currently the main focus is a better user interface for the core features:
 
 After that, some planned features are:
 
+  * Translated user interface including different date formats and currencies
   * Recurring transactions
   * Statistics
   * Automatic import from various banking systems

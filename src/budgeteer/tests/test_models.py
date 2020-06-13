@@ -1,12 +1,13 @@
 """
 Unit tests for the budgeteer main app models.
 """
-
 import datetime
 import random
 import string
 import calendar
 from decimal import Decimal
+
+from unittest_data_provider import data_provider
 
 from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
@@ -35,6 +36,11 @@ class CategoryTests(TestCase):
         category.name = ''.join(random.choices(string.ascii_letters + string.digits, k=201))
         with self.assertRaises(ValidationError):
             category.full_clean()
+
+    def test_str(self):
+        expected_name = _get_random_name()
+        category = models.Category(name=expected_name)
+        self.assertEqual(expected_name, category.__str__())
 
 class SheetTests(TestCase):
 
@@ -257,6 +263,16 @@ class SheetTests(TestCase):
         for entry in sheet_in_db.sheetentry_set.all():
             self.assertEqual(Decimal(0), entry.value)
 
+    @data_provider(lambda: (
+        (12, 1, "12/1"),
+        (6, 2020, "06/2020"),
+        (1, 12345, "01/12345"),
+        (10, 1988, "10/1988")
+        ))
+    def test_str(self, month, year, expected_name):
+        sheet = models.Sheet(month=month, year=year)
+        self.assertEqual(expected_name, sheet.__str__())
+
 class SheetEntryTest(TestCase):
 
     def setUp(self):
@@ -427,6 +443,12 @@ class SheetEntryTest(TestCase):
                 self.assertEqual(0, models.SheetEntry.objects.filter(category=category,
                                                                      sheet=sheet).count())
 
+    def test_str(self):
+        value = Decimal(random.uniform(-999.99, 999.99))
+        expected_name = f"[{str(self.sheet)}] {str(self.category)}: {str(value)}"
+        sheet_entry = models.SheetEntry(sheet=self.sheet, category=self.category, value=value)
+        self.assertEqual(expected_name, sheet_entry.__str__())
+
 class AccountTest(TestCase):
 
     def test_name_save(self):
@@ -531,6 +553,11 @@ class AccountTest(TestCase):
         account_in_db = models.Account.objects.get(pk=account.pk)
 
         self.assertAlmostEqual(expected_total, account_in_db.total, 2)
+
+    def test_str(self):
+        expected_name = _get_random_name()
+        account = models.Account(name=expected_name)
+        self.assertEqual(expected_name, account.__str__())
 
 class TransactionTest(TestCase):
 
@@ -848,6 +875,23 @@ class TransactionTest(TestCase):
 
         with self.assertRaises(ValidationError):
             transaction_in_db.full_clean()
+
+    @data_provider(lambda: (
+        (datetime.date(1, 12, 15), "15.12.0001"),
+        (datetime.date(2020, 6, 1), "01.06.2020"),
+        (datetime.date(1234, 1, 31), "31.01.1234"),
+        (datetime.date(1988, 10, 27), "27.10.1988")
+        ))
+    def test_str(self, date, expected_date):
+        partner = _get_random_name()
+        transaction = models.Transaction(partner=partner, date=date, value=Decimal(0),
+                                         category=self.category, account=self.account)
+        expected_name = (
+            f"[{expected_date}] {str(transaction.account)} -> "
+            f"{str(transaction.partner)} ({str(transaction.category)})"
+        )
+
+        self.assertEqual(expected_name, transaction.__str__())
 
 def _create_transaction(month, year, account=None, locked=False) -> models.Transaction:
     category = models.Category(name=_get_random_name())

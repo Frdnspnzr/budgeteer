@@ -8,6 +8,7 @@ pylint-django = "*"
 isort = "*"
 rope = "*"
 pylint = "*"
+unittest-data-provider = "*"
 
 [packages]
 django = "~=3.0.7"

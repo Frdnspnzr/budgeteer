@@ -10,7 +10,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models.signals import post_delete, post_save, pre_delete
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 class Category(models.Model):
@@ -21,6 +21,9 @@ class Category(models.Model):
     however does not enforce this.
     """
     name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
 
 class Sheet(models.Model):
     """
@@ -80,6 +83,9 @@ class Sheet(models.Model):
         except Sheet.DoesNotExist:
             return None
 
+    def __str__(self):
+        return f"{self.month:02d}/{self.year}"
+
     class Meta:
         unique_together = ['month', 'year']
 
@@ -126,6 +132,9 @@ class SheetEntry(models.Model):
                 if previous_value != current_value:
                     raise ValidationError(f"Field {field} was changed on locked sheet entry.")
 
+    def __str__(self):
+        return f"[{str(self.sheet)}] {str(self.category)}: {str(self.value)}"
+
 @receiver(post_save, sender=Category)
 def create_sheet_entries_on_category_creation(instance, created, raw, **kwargs):
     """
@@ -151,6 +160,9 @@ class Account(models.Model):
         This includes the starting balance and all non-locked transactions, including upcoming
         """
         return self.balance + self.__get_transaction_total()
+
+    def __str__(self):
+        return self.name
 
     def __get_transaction_total(self):
         aggregated = (Transaction.objects
@@ -183,3 +195,9 @@ class Transaction(models.Model):
                 current_value = getattr(self, field)
                 if previous_value != current_value:
                     raise ValidationError(f"Field {field} was changed on locked transaction.")
+
+    def __str__(self):
+        return (
+            f"[{self.date:%d.%m.%Y}] {str(self.account)} "
+            f"-> {str(self.partner)} ({str(self.category)})"
+        )
