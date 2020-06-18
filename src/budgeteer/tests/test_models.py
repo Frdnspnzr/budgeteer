@@ -877,10 +877,10 @@ class TransactionTest(TestCase):
             transaction_in_db.full_clean()
 
     @data_provider(lambda: (
-        (datetime.date(1, 12, 15), "15.12.0001"),
-        (datetime.date(2020, 6, 1), "01.06.2020"),
-        (datetime.date(1234, 1, 31), "31.01.1234"),
-        (datetime.date(1988, 10, 27), "27.10.1988")
+        (datetime.date(1000, 12, 15), "1000-12-15"),
+        (datetime.date(2020, 6, 1), "2020-06-01"),
+        (datetime.date(1234, 1, 31), "1234-01-31"),
+        (datetime.date(1988, 10, 27), "1988-10-27")
         ))
     def test_str(self, date, expected_date):
         partner = _get_random_name()

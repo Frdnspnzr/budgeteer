@@ -198,6 +198,6 @@ class Transaction(models.Model):
 
     def __str__(self):
         return (
-            f"[{self.date:%d.%m.%Y}] {str(self.account)} "
+            f"[{self.date:%Y-%m-%d}] {str(self.account)} "
             f"-> {str(self.partner)} ({str(self.category)})"
         )
