@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block page_title %}{{account.name}} » Overview{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-3">
+        <div class="col">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title">{{account.name}}</h5>
+                    <div class="card-text container">
+                        <div class="row">
+                            <div class="col">Balance {% include "atomic/value.html" with value=account.balance %}</div>
+                            <div class="col">Total {% include "atomic/value.html" with value=account.total %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        </div class="col">
+            <table class="table">
+                <thead class="thead-light">
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Partner</th>
+                        <th scope="col">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for transaction in object_list %}
+                    <tr>
+                        <td>{{transaction.date}}</td>
+                        <td>{{transaction.partner}}</td>
+                        <td>{% include "atomic/value.html" with value=transaction.value %}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3">No transactions yet</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

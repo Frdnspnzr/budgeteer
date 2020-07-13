@@ -1,0 +1,68 @@
+[
+  {
+    "model": "budgeteer.category",
+    "pk": 1,
+    "fields": { "name": "Test category 1" }
+  },
+  {
+    "model": "budgeteer.category",
+    "pk": 2,
+    "fields": { "name": "Test category 2" }
+  },
+  {
+    "model": "budgeteer.sheet",
+    "pk": 1,
+    "fields": { "month": 6, "year": 2020, "carryover": null }
+  },
+  {
+    "model": "budgeteer.sheetentry",
+    "pk": 1,
+    "fields": { "sheet": 1, "category": 2, "value": "0.00", "locked": false }
+  },
+  {
+    "model": "budgeteer.account",
+    "pk": 1,
+    "fields": { "name": "Test account 1", "balance": "7000.00" }
+  },
+  {
+    "model": "budgeteer.account",
+    "pk": 2,
+    "fields": { "name": "Test account 2", "balance": "7000.00" }
+  },
+  {
+    "model": "budgeteer.transaction",
+    "pk": 1,
+    "fields": {
+      "partner": "Test partner 1",
+      "date": "2020-06-27",
+      "value": "10",
+      "category": 1,
+      "account": 1,
+      "locked": false
+    }
+  },
+  {
+    "model": "budgeteer.transaction",
+    "pk": 2,
+    "fields": {
+      "partner": "Test partner 2",
+      "date": "2020-06-27",
+      "value": "-10",
+      "category": 1,
+      "account": 1,
+      "locked": false
+    }
+  },
+  {
+    "model": "budgeteer.transaction",
+    "pk": 3,
+    "fields": {
+      "partner": "Test partner 3",
+      "date": "2020-06-27",
+      "value": "10",
+      "category": 1,
+      "account": 2,
+      "locked": false
+    }
+  }
+]
