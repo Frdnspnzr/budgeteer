@@ -11,7 +11,7 @@ pylint = "*"
 unittest-data-provider = "*"
 
 [packages]
-django = "~=3.0.7"
+django = "~=3.0.12"
 
 [requires]
 python_version = "3.7"
